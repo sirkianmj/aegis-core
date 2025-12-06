@@ -1,7 +1,7 @@
 from aegis.core.logic.engine import ReasoningEngine
 from aegis.core.logic.grammar import FactType
 
-ddef test_logic_flow():
+def test_logic_flow():
     print("=== AEGIS COGNITIVE CORE TEST (SPRINT 1) ===")
     
     # 1. Initialize the Brain
