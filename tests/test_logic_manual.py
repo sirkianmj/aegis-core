@@ -1,7 +1,7 @@
 from aegis.core.logic.engine import ReasoningEngine
 from aegis.core.logic.grammar import FactType
 
-def main():
+ddef test_logic_flow():
     print("=== AEGIS COGNITIVE CORE TEST (SPRINT 1) ===")
     
     # 1. Initialize the Brain
@@ -26,5 +26,3 @@ def main():
     else:
         print("\n[FAILURE] Mathematical proof failed. No path exists.")
 
-if __name__ == "__main__":
-    main()

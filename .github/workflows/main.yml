@@ -42,13 +42,10 @@ jobs:
         # Stop the build if there are syntax errors
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         
-    - name: Run Tests
-      env:
+    -  name: Run Tests
+        env:
         PYTHONPATH: ${{ github.workspace }}
-      run: |
-        # We run specific tests that don't require the compiled binary targets
-        # (Since we haven't told GitHub how to compile the C files yet)
-        pytest tests/test_logic_manual.py
-        pytest tests/test_network_graph.py
-        pytest tests/test_jit_verification.py
-        pytest tests/test_xai_audit.py
+        run: |
+        # Run all tests in the 'tests' folder
+        # -v means verbose (show us exactly what passed)
+         pytest -v tests/
