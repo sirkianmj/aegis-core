@@ -12,52 +12,40 @@ class ConcolicVerifier:
         self.project = angr.Project(binary_path, auto_load_libs=True)
 
     def verify_input_and_trace(self, input_string: str, target_output: str) -> bool:
-        """
-        1. Inject the 'input_string' into the virtual CPU.
-        2. Run the code.
-        3. Record the Execution Trace (Basic Blocks).
-        4. Check if we hit the target output.
-        """
         print(f"[CONCOLIC] Emulating binary with input: '{input_string}'")
         
-        # 1. Create a state with the SPECIFIC input (Concrete, not Symbolic)
-        # We start at the entry point of the binary
-        entry_state = self.project.factory.entry_state(
-            args=[self.binary_path],
-            stdin=input_string
-        )
-        
-        # 2. Initialize the Simulation Manager
+        entry_state = self.project.factory.entry_state(args=[self.binary_path], stdin=input_string)
         sim = self.project.factory.simgr(entry_state)
         
-        # 3. Step through execution until termination
-        # This uses the UNICORN engine under the hood for speed
-        trace = []
-        
-        print("[CONCOLIC] Running Trace...")
-        
-        # Run until the program finishes or crashes
         sim.run()
         
-        # 4. Analyze the Result (Deadended states = finished programs)
+        # ANALYSIS 1: Did it finish normally?
         if sim.deadended:
             final_state = sim.deadended[0]
-            output = final_state.posix.dumps(1) # Stdout
-            
-            # Extract the history (The Trace)
-            # basic_blocks is a list of memory addresses executed
+            output = final_state.posix.dumps(1)
             history = list(final_state.history.bbl_addrs)
-            trace_len = len(history)
-            
-            print(f"[TRACE] Execution finished. Instructions executed: {trace_len} blocks.")
-            print(f"[TRACE] Final Output: {output}")
+            print(f"[TRACE] Finished. Output: {output}")
             
             if target_output.encode() in output:
-                print("[VERIFIED] Simulation confirms the input works.")
+                print("[VERIFIED] Simulation confirms success output.")
                 return True
-            else:
-                print("[FAILURE] Simulation finished, but output was wrong.")
-                return False
-        else:
-            print("[CRASH] The binary crashed during emulation.")
             return False
+
+        # ANALYSIS 2: Did it crash? (Exploitability Index)
+        if sim.errored:
+            error_state = sim.errored[0].state
+            # Get the Instruction Pointer (RIP/EIP) at the moment of crash
+            crash_ip = error_state.solver.eval(error_state.regs.ip)
+            print(f"[CRASH DETECTED] RIP at crash: {hex(crash_ip)}")
+            
+            # Heuristic: If RIP is a weird number (like 0x41414141), we control it.
+            # 'A' = 0x41. If we see 0x4141..., we overwrote the pointer.
+            if crash_ip == 0x4141414141414141 or (crash_ip >> 32) == 0x41414141:
+                print("[TRIAGE] CRITICAL: Instruction Pointer Overwritten by User Input!")
+                print("[TRIAGE] Exploitability Index: 10/10 (High)")
+                return True # A controlled crash is a SUCCESS for an exploit tool
+            else:
+                print("[TRIAGE] Crash is likely a SEGFAULT (Index: 2/10).")
+                return False
+                
+        return False

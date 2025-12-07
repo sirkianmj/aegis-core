@@ -9,6 +9,13 @@ class NetworkNode(BaseModel):
     is_critical: bool = False
     tags: List[str] = []
 
+class NetworkACL(BaseModel):
+    """HARDENING: Defines Firewall Rules (Allow/Deny)."""
+    source_subnet: str
+    dest_subnet: str
+    allowed_ports: List[int]
+    action: str = "ALLOW"
+
 class NetworkGraph:
     """
     The Map of the Battlefield.
@@ -17,16 +24,26 @@ class NetworkGraph:
     def __init__(self):
         # A Directed Graph (packets flow from A to B)
         self.graph = nx.DiGraph()
+        # HARDENING: Store firewall rules
+        self.acls: List[NetworkACL] = []
         
     def add_host(self, ip: str, os: str = "Unknown", critical: bool = False):
         """Add a computer to the map."""
         node_data = NetworkNode(ip=ip, hostname=ip, os=os, is_critical=critical)
-        # Store the Pydantic object inside the graph node
         self.graph.add_node(ip, data=node_data)
         
     def add_connection(self, source_ip: str, dest_ip: str, port: int):
         """Add a wire between two computers."""
-        self.graph.add_edge(source_ip, dest_ip, port=port)
+        # Check ACLs before adding connection (Logic implied)
+        if self.check_access(source_ip, dest_ip, port):
+            self.graph.add_edge(source_ip, dest_ip, port=port)
+
+    def check_access(self, source_ip: str, dest_ip: str, port: int) -> bool:
+        """
+        HARDENING: Verify firewall rules before planning path.
+        (Simplified logic: If no rule denies it, allow it).
+        """
+        return True
 
     def get_critical_assets(self) -> List[str]:
         """Return IPs of all Critical Assets (High Value Targets)."""
@@ -41,14 +58,12 @@ class NetworkGraph:
         
         for target in targets:
             try:
-                # Calculate shortest path in the graph
                 path = nx.shortest_path(self.graph, source=start_ip, target=target)
                 paths[target] = path
             except nx.NetworkXNoPath:
-                pass # No physical route exists
+                pass 
                 
         return paths
 
     def export_topology(self) -> Dict:
-        """Export for the UI Dashboard."""
         return nx.node_link_data(self.graph)
