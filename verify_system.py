@@ -24,7 +24,7 @@ class SmartJudge:
     def __init__(self):
         self.score = 0
         self.total_tests = 0
-        self.max_score = 115 # Adjusted for all hardening + ROP features
+        self.max_score = 135 # Adjusted for all hardening + ROP features
         self.results = []
 
     def evaluate(self, name: str, success: bool, points: int, details: str = ""):
@@ -264,7 +264,35 @@ def main():
     test_sprint_2_3_network(judge)
     test_sprint_4_5_governance(judge)
     test_sprint_7_8_9_weapons(judge)
+    test_sprint_11_12_hatl(judge)
     judge.final_report()
+def test_sprint_11_12_hatl(judge: SmartJudge):
+    console.print("\n[bold blue]--- PHASE 6: HARDWARE TRACING (HATL) ---[/]")
+    try:
+        from aegis.core.tracing.hatl import HardwareTraceEngine, Architecture, PacketType
+        import struct
+        
+        # Test Decoding
+        hatl = HardwareTraceEngine(Architecture.INTEL_X64)
+        # 0x02 = TNT (Taken)
+        hatl.ingest_raw_stream(b'\x02') 
+        count = hatl.process()
+        if count > 0 and hatl.decoded_packets[0].type == PacketType.BRANCH_DECISION:
+            judge.evaluate("Intel PT Decoder", True, 10, "Decoded TNT packet")
+        else:
+            judge.evaluate("Intel PT Decoder", False, 10, "Decoding failed")
+            
+        # Test Hardening (Ring Buffer)
+        hatl_arm = HardwareTraceEngine(Architecture.ARM_V8)
+        overflow = b'\x41' * 70000 # 70KB
+        hatl_arm.ingest_raw_stream(overflow)
+        if len(hatl_arm.ring_buffer.dump()) == 65536:
+            judge.evaluate("Ring Buffer Hardening", True, 10, "Buffer capped at 64KB")
+        else:
+            judge.evaluate("Ring Buffer Hardening", False, 10, "Buffer overflowed")
+            
+    except Exception as e:
+        judge.evaluate("HATL System", False, 20, f"Crash: {e}")    
 
 if __name__ == "__main__":
     main()
