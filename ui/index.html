@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PROJECT AEGIS // COMMAND</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        /* CRT Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-gap: 20px;
+            height: 95vh;
+        }
+
+        .panel {
+            border: 1px solid #0f0;
+            padding: 15px;
+            box-shadow: 0 0 10px #0f0;
+            background: rgba(0, 20, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 { margin-top: 0; border-bottom: 1px dashed #0f0; padding-bottom: 10px; }
+
+        input, button {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-family: inherit;
+            margin-bottom: 10px;
+            width: 90%;
+        }
+
+        button:hover {
+            background: #0f0;
+            color: #000;
+            cursor: pointer;
+        }
+
+        #terminal {
+            flex-grow: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .log-entry { margin-bottom: 5px; }
+        .log-time { color: #005500; }
+        .log-info { color: #0f0; }
+        .log-warn { color: #ffff00; }
+        .log-crit { color: #ff0000; font-weight: bold; }
+
+        #status-light {
+            width: 15px;
+            height: 15px;
+            background-color: #0f0;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px #0f0;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <!-- SIDEBAR CONTROLS -->
+    <div class="panel">
+        <h2>// SYSTEM CONTROL</h2>
+        <div style="margin-bottom: 20px;">
+            STATUS: <span id="status-text">ONLINE</span> <div id="status-light"></div><br>
+            MODE: <span style="color:yellow">SIMULATION</span>
+        </div>
+
+        <label>TARGET IP:</label>
+        <input type="text" id="target-ip" value="192.168.1.50">
+
+        <label>OS TYPE:</label>
+        <input type="text" id="target-os" value="Linux Kernel 5.4">
+
+        <button onclick="runAnalysis()">INITIATE ANALYSIS</button>
+        <button onclick="generatePayload()">WEAPONIZE (AEG)</button>
+        <button onclick="clearTerm()">CLEAR LOGS</button>
+        
+        <div style="margin-top: auto; font-size: 10px; color: #005500;">
+            PROJECT AEGIS v2.0.9<br>
+            FORGEX4 RESEARCH LAB<br>
+            CLASSIFIED
+        </div>
+    </div>
+
+    <!-- MAIN TERMINAL -->
+    <div class="panel">
+        <h2>// TACTICAL READOUT</h2>
+        <div id="terminal">
+            <div class="log-entry"><span class="log-time">[SYSTEM]</span> AEGIS Cognitive Core Initialized...</div>
+            <div class="log-entry"><span class="log-time">[SYSTEM]</span> Z3 Solver: READY</div>
+            <div class="log-entry"><span class="log-time">[SYSTEM]</span> Governance: O-SAFE ACTIVE</div>
+            <div class="log-entry"><span class="log-time">[SYSTEM]</span> Waiting for operator input...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://localhost:8000";
+
+    function log(msg, level="info") {
+        const term = document.getElementById('terminal');
+        const entry = document.createElement('div');
+        entry.className = "log-entry";
+        
+        const time = new Date().toLocaleTimeString();
+        let colorClass = "log-info";
+        if(level === "warn") colorClass = "log-warn";
+        if(level === "crit") colorClass = "log-crit";
+
+        entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="${colorClass}">${msg}</span>`;
+        term.appendChild(entry);
+        term.scrollTop = term.scrollHeight;
+    }
+
+    async function runAnalysis() {
+        const ip = document.getElementById('target-ip').value;
+        const os = document.getElementById('target-os').value;
+        
+        log(`Connecting to Neural Core for analysis of ${ip}...`);
+        
+        try {
+            const response = await fetch(`${API_URL}/analyze`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ip: ip, os_type: os })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                log(`ACCESS DENIED: ${err.detail}`, "crit");
+                return;
+            }
+
+            const data = await response.json();
+            log("Analysis Complete.", "info");
+            log(`> Vulnerable: ${data.is_vulnerable}`, data.is_vulnerable ? "crit" : "info");
+            log(`> Vector: ${data.attack_vector}`, "info");
+            
+        } catch (e) {
+            log(`Connection Error: Is the backend running?`, "crit");
+        }
+    }
+
+    async function generatePayload() {
+        log("Requesting Weaponization from Factory...", "warn");
+        try {
+            // Hardcoded parameters for demo
+            const response = await fetch(`${API_URL}/generate-payload`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ target_offset: 72, rip: 4194304 })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                log(`Factory Error: ${err.detail}`, "crit");
+                return;
+            }
+
+            const data = await response.json();
+            log(`Payload Generated: ${data.size} bytes`, "warn");
+            log(`HEX: ${data.payload_hex.substring(0, 50)}...`, "info");
+            log("Use 'Real Driver' to deliver payload.", "info");
+
+        } catch (e) {
+            log(`Error: ${e}`, "crit");
+        }
+    }
+    
+    function clearTerm() {
+        document.getElementById('terminal').innerHTML = "";
+    }
+</script>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import Core Engines
 from aegis.core.logic.engine import ReasoningEngine
@@ -9,6 +10,15 @@ from aegis.core.exploitation.payload_factory import PayloadFactory
 from aegis.core.governance.aps import AbusePreventionSystem
 
 app = FastAPI(title="AEGIS Autonomous Command Interface", version="2.0.9")
+# --- CORS FIX FOR UI ---
+# This allows your local HTML file to talk to the Python API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow any origin (Fine for a local tool)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize Systems
 brain = ReasoningEngine()
