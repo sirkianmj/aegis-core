@@ -16,12 +16,12 @@ def test_signature_evasion():
     
     # 1. Generate First Mutant
     print("\n[GEN 1] Creating Mutant Alpha...")
-    bin1 = factory.generate_loader(shellcode, "mutant_alpha")
+    bin1 = factory.generate_flattened_loader(shellcode, "mutant_alpha")
     if not bin1: return
     
     # 2. Generate Second Mutant
     print("\n[GEN 2] Creating Mutant Beta...")
-    bin2 = factory.generate_loader(shellcode, "mutant_beta")
+    bin2 = factory.generate_flattened_loader(shellcode, "mutant_beta")
     if not bin2: return
     
     # 3. Compare Signatures
