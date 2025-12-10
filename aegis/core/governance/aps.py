@@ -59,8 +59,11 @@ class AbusePreventionSystem:
             raise PermissionError("APS LOCKOUT: No Scope Certificate Loaded.")
             
         if not self.scope_cert.is_valid_target(target_ip):
-            print(f"[APS] ⛔ INTERVENTION: Target {target_ip} is OUT OF SCOPE.")
-            return False
+            # HARDENING FIX: Raise Exception instead of returning False.
+            # This ensures API layers catch the violation immediately.
+            msg = f"APS INTERVENTION: Target {target_ip} is OUT OF SCOPE."
+            print(f"[APS] ⛔ {msg}")
+            raise PermissionError(msg)
             
         return True
 

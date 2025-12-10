@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from typing import Optional, Callable
+import time
 
 class TruthState(Enum):
     FALSE = 0
@@ -45,3 +46,15 @@ class UncertainBool:
     def __bool__(self):
         """Allows using the object in 'if' statements directly."""
         return self.collapse()
+    _last_probe_time = 0.0
+    RATE_LIMIT_DELAY = 2.0 # HARDENING: 2 seconds between probes
+
+    def _wait_for_rate_limit(self):
+        """HARDENING: Enforce stealth constraints."""
+        now = time.time()
+        elapsed = now - UncertainBool._last_probe_time
+        if elapsed < self.RATE_LIMIT_DELAY:
+            sleep_time = self.RATE_LIMIT_DELAY - elapsed
+            print(f"[STEALTH] Rate limit active. Sleeping {sleep_time:.2f}s...")
+            time.sleep(sleep_time)
+        UncertainBool._last_probe_time = time.time()

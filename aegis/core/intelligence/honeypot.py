@@ -132,16 +132,29 @@ class HoneypotDetector:
         score += self.w_ttl * self._analyze_ttl(profile.ttl_values)
         
         # 5. Adaptive Probing
-        # In the real world, we only probe if we are fairly sure it's fake.
-        # Otherwise, we stay silent to avoid IDS logs.
-        if 0.5 <= score < 0.90:  # Restored to strict threshold
+        # CALIBRATION FIX: Lower threshold to 0.25 to catch subtle fakes.
+        if 0.25 <= score < 0.90:
             print(f"[ADAPTIVE] Suspicion Score ({score:.2f}) exceeds threshold. Engaging Probes...")
             
             # Weighted average of active probes
-            active_score = (self._probe_invalid_tcp() + 
-                            self._probe_out_of_order() + 
-                            self._probe_icmp_timestamp()) / 3.0
-                            
-            score += self.w_active * active_score
+            # Probe 1: Invalid TCP (0.8 risk)
+            # Probe 2: Out of Order (0.9 risk)
+            # Probe 3: ICMP (0.0 risk)
+            p1 = self._probe_invalid_tcp()
+            p2 = self._probe_out_of_order()
+            p3 = self._probe_icmp_timestamp()
+            
+            avg_active_risk = (p1 + p2 + p3) / 3.0
+            
+            # VETO LOGIC (The Fix):
+            # If active probes show strong evidence (> 0.5), it dominates the passive score.
+            # Real kernels NEVER fail these specific checks.
+            if avg_active_risk > 0.5:
+                print(f"[INTEL] ⚠️  CRITICAL ANOMALY: Active probes confirmed simulation behavior.")
+                # Boost score to near-certainty, regardless of entropy
+                score = max(score, 0.95)
+            else:
+                # Standard weighted addition
+                score += self.w_active * avg_active_risk
             
         return min(score, 1.0)

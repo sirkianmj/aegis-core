@@ -32,6 +32,18 @@ def test_governance():
         print("[FAIL] SAFETY FAILURE! AI destroyed production!")
     except SafetyViolation as e:
         print(f"[PASS] Governance correctly blocked the attack:\n       {e}")
+    # 5. HARDENING TEST: Default Deny
+    print("\n[TEST 4] HARDENING CHECK: Unknown Action...")
+    try:
+        # Create a fake action with an unknown safety tier
+        unknown_action = exploit_rce.model_copy() # Copy existing
+        unknown_action.name = "Mystery Hack"
+        unknown_action.safety_tier = "PURPLE" # undefined tier
+        
+        OSafePolicy.enforce(unknown_action, boring_server)
+        print("[FAIL] Security Hole: Unknown action was allowed!")
+    except SafetyViolation as e:
+        print(f"[PASS] Default Deny worked. Reason:\n       {e}")
 
 if __name__ == "__main__":
     test_governance()
