@@ -232,9 +232,9 @@ python main.py --mode simulation --topology scenarios/corporate_network.json
 | Phase | Sprint | Milestone | Status |
 |:-----:|:------:|:----------|:------:|
 | 🟢 | **0-4** | Foundation, Grammar Definition (UGE), and Z3 Integration | ✅ Complete |
-| 🟡 | **5-10** | Just-In-Time (JIT) Verification and Safety Tiers | 🔄 In Progress |
-| 🟠 | **11-16** | Hardware-Assisted Tracing (HATL) Abstraction | 📋 Planned |
-| 🔵 | **21** | Formal Verification of Governance Logic (Coq/Lean) | 📋 Planned |
+| 🟡 | **5-10** | Just-In-Time (JIT) Verification and Safety Tiers | ✅ Complete |
+| 🟠 | **11-16** | Hardware-Assisted Tracing (HATL) Abstraction | ✅ Complete |
+| 🔵 | **21** | Formal Verification of Governance Logic (Coq/Lean) | ✅ Complete |
 
 <br>
 
